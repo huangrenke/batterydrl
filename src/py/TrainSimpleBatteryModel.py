@@ -20,7 +20,7 @@ np.random.seed(19)
 
 # create
 
-Lmpfile = '/home/haow889/BatteryDRL/TestData/2017_Zonal_LMP_LONGIL.csv'
+Lmpfile = '../../TestData/2017_Zonal_LMP_LONGIL.csv'
 
 #ob_act_dim_ary = ipss_app.initStudyCase(case_files_array , dyn_config_file, rl_config_file)
 
