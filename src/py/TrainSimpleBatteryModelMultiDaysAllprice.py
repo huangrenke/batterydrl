@@ -3,11 +3,11 @@ import gym
 import sys
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from gym import wrappers
 from datetime import datetime
 import time
-from q_learning_bins import plot_running_avg
+#from q_learning_bins import plot_running_avg
 #from SimpleBatteryModelDef import SimpleBatterySimEnv
 #from SimpleBatteryModelDefnoCappenalty import SimpleBatterySimEnv
 from SimpleBatteryModelnoCapAllpriceDef import SimpleBatterySimEnv
@@ -47,9 +47,9 @@ def callback(lcl, glb):
             U.save_state(model_file)
 
 def main(learning_rate):
-   
+
     tf.reset_default_graph()    # to avoid the conflict with the existing parameters, but this is not suggested for reuse parameters
-    simudays = 10
+    simudays = 3
     env = SimpleBatterySimEnv(Lmpfile, 2, simudays)
     model = deepq.models.mlp([256,256])
 
@@ -133,6 +133,6 @@ def test():
     print("Episode reward", episode_rew)
 
     return actions
-'''    
-    
+'''
+
 

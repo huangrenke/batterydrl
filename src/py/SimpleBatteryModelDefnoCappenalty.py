@@ -108,7 +108,7 @@ class SimpleBatterySimEnv(gym.Env):
         
         bchargepenlty = False
         
-        
+        reward_reduce = 0.0
         if self.BatteryEt > self.BatteryCap:
             bchargepenlty = True
             reward_reduce = -self.currentLMP * (self.BatteryEt - self.BatteryCap)/self.eta_n
@@ -120,7 +120,11 @@ class SimpleBatterySimEnv(gym.Env):
             self.BatteryEt = 0.0
             
         # compute reward:
+        
         reward = -self.currentLMP*self.BatteryPt
+        
+        #print ('time step is %d, reward is %f, reward_reduce is %f, BatteryEt_prev is %f, BatteryPt is %f, BatteryEt_now is %f'%(self.simuhours, reward, reward_reduce, BatteryEt_prev, self.BatteryPt, self.BatteryEt))
+        
         if bchargepenlty:  # if the charge/discharge makes the battery exceeds its capacity or less than 0 MWh
             #print ('time step is %d, reward is %f, reward_reduce is %f, BatteryEt_prev is %f, BatteryPt is %f, BatteryEt_now is %f'%(self.simuhours, reward, reward_reduce, BatteryEt_prev, self.BatteryPt, self.BatteryEt))
             reward -= reward_reduce              
