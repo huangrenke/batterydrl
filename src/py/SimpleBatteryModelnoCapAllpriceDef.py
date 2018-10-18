@@ -223,6 +223,6 @@ class SimpleBatterySimEnv(gym.Env):
         self.steps_beyond_done = None
         self.restart_simulation = True
 
-        return self.state()
+        return self.state
 
     # def _render(self, mode='human', close=False):
