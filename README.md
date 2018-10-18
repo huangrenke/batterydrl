@@ -1,4 +1,4 @@
-## Deep Grid Project
+## Battery Control Project
 
   We explore to use deep reinforcement learning methods for emergency control in power grid system.  
 
