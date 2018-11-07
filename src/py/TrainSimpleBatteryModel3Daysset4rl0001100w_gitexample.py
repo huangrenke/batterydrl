@@ -3,11 +3,11 @@ import gym
 import sys
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from gym import wrappers
 from datetime import datetime
 import time
-from q_learning_bins import plot_running_avg
+#from q_learning_bins import plot_running_avg
 #from SimpleBatteryModelDef import SimpleBatterySimEnv
 from SimpleBatteryModelDefnoCappenaltyMultiDay import SimpleBatterySimEnv
 
