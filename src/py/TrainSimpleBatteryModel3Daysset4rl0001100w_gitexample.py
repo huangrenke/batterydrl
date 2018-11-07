@@ -9,22 +9,24 @@ from datetime import datetime
 import time
 from q_learning_bins import plot_running_avg
 #from SimpleBatteryModelDef import SimpleBatterySimEnv
-from SimpleBatteryModelDefnoCappenalty import SimpleBatterySimEnv
+from SimpleBatteryModelDefnoCappenaltyMultiDay import SimpleBatterySimEnv
 
 
 from baselines import deepq
 from baselines import logger
 import baselines.common.tf_util as U
 
+# this training file train a smaller day sets, each episode with 3 day simulation time, the input for AI includes forecasted one-day price information
+
 np.random.seed(19)
 
 # create
 
-Lmpfile = '/home/haow889/BatteryDRL/TestData/2017_Zonal_LMP_LONGIL.csv'
+Lmpfile = '../../TestData/2017_Zonal_LMP_LONGIL.csv'
 
 #ob_act_dim_ary = ipss_app.initStudyCase(case_files_array , dyn_config_file, rl_config_file)
 
-storedData = "./storedData_round2_nolastpenalty_multidays"
+storedData = "./storedData_nolastpenalty_simu3days_smalltrainset4"
 if not os.path.exists(storedData):
     os.makedirs(storedData)
 
@@ -49,16 +51,21 @@ def callback(lcl, glb):
             U.save_state(model_file)
 
 def main(learning_rate):
-   
+
     tf.reset_default_graph()    # to avoid the conflict with the existing parameters, but this is not suggested for reuse parameters
-    env = SimpleBatterySimEnv(Lmpfile, 2)
+
+    selectdays = [3,7,12,33,43,62,69,80,91,97,98,108,116,123,126,136,144,153,161,174,192,199,225,230,234,247,261,274,281,287,295,305,313,320,327,332,345,348,357,350,360]
+    selectdays2 = selectdays[0:41:4]
+    startday = 3
+    nsimudays =3
+    env = SimpleBatterySimEnv(Lmpfile, startday, nsimudays, selectdays2)
     model = deepq.models.mlp([256,256])
 
     act = deepq.learn(
         env,
         q_func=model,
         lr=learning_rate,
-        max_timesteps=2000000,
+        max_timesteps=1000000,
         buffer_size=50000,
         checkpoint_freq = 100,
         exploration_fraction=0.1,
@@ -66,8 +73,8 @@ def main(learning_rate):
         print_freq=10,
         callback=callback
     )
-    print("Saving final model to simple_battery_model_lr_%s_200w.pkl" % (str(learning_rate)))
-    act.save(savedModel + "/" + model_name + "_lr_%s_200w.pkl" % (str(learning_rate)))
+    print("Saving final model to %s_lr_%s_%dw.pkl" % (model_name, str(learning_rate), int(max_timesteps/10000)))
+    act.save( savedModel + "/" + model_name + "_lr_%s_%dw.pkl" % (str(learning_rate), int(max_timesteps/10000)) )
 
 #aa._act_params
 
@@ -90,7 +97,7 @@ model_file = os.path.join(check_pt_dir, "simplebatterymodel")
 import time
 start = time.time()
 dataname = "multistep_round1"
-for ll in [0.00005]:
+for ll in [0.0001]:
     step_rewards = list()
     step_actions = list()
     step_observations = list()
@@ -138,6 +145,6 @@ def test():
     print("Episode reward", episode_rew)
 
     return actions
-'''    
-    
+'''
+
 
