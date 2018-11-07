@@ -172,7 +172,7 @@ class SimpleBatterySimEnv(gym.Env):
         ntraindays = len(self.traindayset)
         simustartday_idx = np.random.randint(0, ntraindays) # an integer, in be in the preset days?
         
-        self.simustartday = self.ntraindays[simustartday_idx]
+        self.simustartday = self.traindayset[simustartday_idx]
         #print('--------- reset:  simustartday is %d -------------'%(self.simustartday))
         
         self.currentLMP = self.LMP_days[self.simustartday, 0]
