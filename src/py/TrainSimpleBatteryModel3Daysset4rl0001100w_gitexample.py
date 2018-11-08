@@ -73,6 +73,7 @@ def main(learning_rate):
         print_freq=10,
         callback=callback
     )
+    max_timesteps=1000000
     print("Saving final model to %s_lr_%s_%dw.pkl" % (model_name, str(learning_rate), int(max_timesteps/10000)))
     act.save( savedModel + "/" + model_name + "_lr_%s_%dw.pkl" % (str(learning_rate), int(max_timesteps/10000)) )
 
@@ -96,7 +97,7 @@ model_file = os.path.join(check_pt_dir, "simplebatterymodel")
 
 import time
 start = time.time()
-dataname = "multistep_round1"
+dataname = "step100w"
 for ll in [0.0001]:
     step_rewards = list()
     step_actions = list()
