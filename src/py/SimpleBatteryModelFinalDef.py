@@ -12,6 +12,13 @@ import collections
 # logging
 logger = logging.getLogger(__name__)
 
+# final version for the simple battery model
+# support (1) specify nsimudays simulation days for one episode
+#         (2) specify the input training days set
+#         (3) specify forcasting npriceday days of price
+# no penalty for charging/discharging over the limit, but will correct the price and reward
+# no penalty for at the end of simulation the Et does not go back to the original Et 
+
 class SimpleBatterySimEnv(gym.Env):
     metadata = {
 
@@ -21,7 +28,7 @@ class SimpleBatterySimEnv(gym.Env):
     step_time = 1
     action_type = 'discrete'
 
-    def __init__(self, LMP_file, istartday,nsimudays):
+    def __init__(self, LMP_file, istartday,nsimudays, npriceday, traindayset):
 
         # internal states and variables for the battery model
         #print ('enter the __init__ function of SimpleBatterySimEnv')
@@ -36,7 +43,9 @@ class SimpleBatterySimEnv(gym.Env):
         self.orgSOCbiaspenalty = 0.0
         self.simuhours = 0
         self.simudays = nsimudays
+        self.npriceday = npriceday
         self.simustartday = istartday
+        self.traindayset = traindayset
 
         self._LMP_file = LMP_file
 
@@ -52,30 +61,30 @@ class SimpleBatterySimEnv(gym.Env):
 
         self.observation_Et_length = 24
         self.observation_Pt_length =  24
-        self.observation_LMP_length =  nsimudays*24
+        self.observation_LMP_past_length =  24
         action_space_dim = 21
 
         self.actionspace_to_Pt_mapper = np.linspace(-self.maxPt, self.maxPt, action_space_dim)
 
         self.observation_Et_queue = collections.deque(maxlen=self.observation_Et_length)
         self.observation_Pt_queue = collections.deque(maxlen=self.observation_Pt_length)
-        #self.observation_LMP_pastoneday_queue = collections.deque(maxlen=self.observation_LMP_length)
-        self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24 : (self.simustartday+self.simudays)*24]
+        self.observation_LMP_pastoneday_queue = collections.deque(maxlen=self.observation_LMP_past_length)
+        self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24 : (self.simustartday+self.npriceday)*24]
 
         for i in range (0, self.observation_Et_length):
             self.observation_Et_queue.append(self.BatteryEt)
             self.observation_Pt_queue.append(self.BatteryPt)
-            #self.observation_LMP_pastoneday_queue.append(self.currentLMP)   # this may cause confuse for the AI????
+            self.observation_LMP_pastoneday_queue.append(self.currentLMP)   # this may cause confuse for the AI????
 
         #define action and observation spaces
         self.action_space      = spaces.Discrete(action_space_dim)
-        self.observation_space = spaces.Box(-999,999,shape=(self.observation_Et_length + self.observation_Pt_length + self.simudays*24,))
+        self.observation_space = spaces.Box(-999,999,shape=(self.observation_Et_length + self.observation_Pt_length + (self.npriceday+1)*24,))
 
         self._seed()
 
         #TOOD get the initial states
         #self.state = np.array([self.observation_Et_queue, self.observation_Pt_queue, self.observation_LMP_forecast])
-        self.state = np.concatenate((np.array(self.observation_Et_queue), np.array(self.observation_Pt_queue), self.observation_LMP_forecast))
+        self.state = np.concatenate((np.array(self.observation_Et_queue), np.array(self.observation_Pt_queue), np.array(self.observation_LMP_pastoneday_queue),  self.observation_LMP_forecast))
         
         self.steps_beyond_done = None
         self.restart_simulation = True
@@ -137,14 +146,13 @@ class SimpleBatterySimEnv(gym.Env):
         #print ('self.BatteryPt value is %f, type is %s'%(self.BatteryPt, type(self.BatteryPt)))
         self.observation_Et_queue.append(self.BatteryEt)
         self.observation_Pt_queue.append(self.BatteryPt)
-        #self.observation_LMP_pastoneday_queue.append(self.currentLMP)
-        #self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24+self.simuhours : self.simustartday*24+self.simuhours+24]
+        self.observation_LMP_pastoneday_queue.append(self.currentLMP)
+        self.observation_LMP_forecast = self.LMP_1dim[(self.simustartday+iday)*24+ihour : (self.simustartday+iday)*24+ihour+24*self.npriceday]
         #print ('after observation_Et_queue')
         #print(self.observation_Pt_queue)
 
-        # convert it from Java_collections array to native Python array
         #self.state = np.array([self.observation_Et_queue, self.observation_Pt_queue, self.observation_LMP_pastoneday_queue, self.observation_LMP_forecastoneday])
-        self.state = np.concatenate((np.array(self.observation_Et_queue), np.array(self.observation_Pt_queue), self.observation_LMP_forecast))
+        self.state = np.concatenate((np.array(self.observation_Et_queue), np.array(self.observation_Pt_queue), np.array(self.observation_LMP_pastoneday_queue), self.observation_LMP_forecast))
         #print ('self.state:')
         #print(self.state)
         #teststate = self.state.ravel()
@@ -168,26 +176,27 @@ class SimpleBatterySimEnv(gym.Env):
         self.simuhours = 0
 
         # reset need to randomize the start day for the three-day simulation
-        selectdays = [3,7,12,33,43,62,69,80,91,97,98,108,116,123,126,136,144,153,161,174,192,199,225,230,234,247,261,274,281,287,295,305,313,320,327,332,345,348, 350, 352]
-        simustartday_idx = np.random.randint(0,40) # an integer, in be in the preset days?
-        self.simustartday = selectdays[simustartday_idx]
+        # selectdays = [3,7,12,33,43,62,69,80,91,97,98,108,116,123,126,136,144,153,161,174,192,199,225,230,234,247,261,274,281,287,295,305,313,320,327,332,345,348, 350, 352]
+        ntraindays = len(self.traindayset)
+        simustartday_idx = np.random.randint(0,ntraindays) # an integer, in be in the preset days?
+        self.simustartday = self.traindayset[simustartday_idx]
         #print('--------- reset:  simustartday is %d -------------'%(self.simustartday))
         
         self.currentLMP = self.LMP_days[self.simustartday, 0]
 
         self.observation_Et_queue.clear()
         self.observation_Pt_queue.clear()
-        #self.observation_LMP_pastoneday_queue.clear()
+        self.observation_LMP_pastoneday_queue.clear()
         #self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24+self.simuhours : self.simustartday*24+self.simuhours+24]
-        self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24 : (self.simustartday+self.simudays)*24]
+        self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24 : (self.simustartday+self.npriceday)*24]
 
         for i in range (0, self.observation_Et_length):
             self.observation_Et_queue.append(self.BatteryEt)
             self.observation_Pt_queue.append(self.BatteryPt)
-            #self.observation_LMP_pastoneday_queue.append(self.currentLMP)   # this may cause confuse for the AI????
+            self.observation_LMP_pastoneday_queue.append(self.currentLMP)   # this may cause confuse for the AI????
 
         #self.state = np.array([self.observation_Et_queue, self.observation_Pt_queue, self.observation_LMP_pastoneday_queue, self.observation_LMP_forecastoneday])
-        self.state = np.concatenate((np.array(self.observation_Et_queue), np.array(self.observation_Pt_queue), self.observation_LMP_forecast))
+        self.state = np.concatenate((np.array(self.observation_Et_queue), np.array(self.observation_Pt_queue), np.array(self.observation_LMP_pastoneday_queue), self.observation_LMP_forecast))
         
         self.steps_beyond_done = None
         self.restart_simulation = True
@@ -207,18 +216,17 @@ class SimpleBatterySimEnv(gym.Env):
 
         self.observation_Et_queue.clear()
         self.observation_Pt_queue.clear()
-        #self.observation_LMP_pastoneday_queue.clear()
+        self.observation_LMP_pastoneday_queue.clear()
         #self.observation_LMP_forecastoneday = self.LMP_days[self.simustartday, :]
-        self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24 : (self.simustartday+self.simudays)*24]
+        self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24 : (self.simustartday+self.npriceday)*24]
 
         for i in range (0, self.observation_Et_length):
             self.observation_Et_queue.append(self.BatteryEt)
             self.observation_Pt_queue.append(self.BatteryPt)
-            #self.observation_LMP_pastoneday_queue.append(self.currentLMP)   # this may cause confuse for the AI????
+            self.observation_LMP_pastoneday_queue.append(self.currentLMP)   # this may cause confuse for the AI????
 
-        # convert it from Java_collections array to native Python array
         #self.state = np.array([self.observation_Et_queue, self.observation_Pt_queue, self.observation_LMP_pastoneday_queue, self.observation_LMP_forecastoneday])
-        self.state = np.concatenate((np.array(self.observation_Et_queue), np.array(self.observation_Pt_queue), self.observation_LMP_forecast))
+        self.state = np.concatenate((np.array(self.observation_Et_queue), np.array(self.observation_Pt_queue), np.array(self.observation_LMP_pastoneday_queue), self.observation_LMP_forecast))
         
         self.steps_beyond_done = None
         self.restart_simulation = True

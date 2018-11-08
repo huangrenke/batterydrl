@@ -9,12 +9,15 @@ from datetime import datetime
 import time
 #from q_learning_bins import plot_running_avg
 #from SimpleBatteryModelDef import SimpleBatterySimEnv
-#from SimpleBatteryModelDefnoCappenalty import SimpleBatterySimEnv
-from SimpleBatteryModelnoCapAllpriceDef import SimpleBatterySimEnv
+#from SimpleBatteryModelDefnoCappenaltyMultiDay import SimpleBatterySimEnv
+from SimpleBatteryModelFinalDef import SimpleBatterySimEnv
+
 
 from baselines import deepq
 from baselines import logger
 import baselines.common.tf_util as U
+
+# this training file train a smaller day sets, each episode with 3 day simulation time, the input for AI includes forecasted 1 day price information
 
 np.random.seed(19)
 
@@ -22,7 +25,9 @@ np.random.seed(19)
 
 Lmpfile = '../../TestData/2017_Zonal_LMP_LONGIL.csv'
 
-storedData = "./storedData_nolastpenalty_multistartday_simu10days_fullprice"
+#ob_act_dim_ary = ipss_app.initStudyCase(case_files_array , dyn_config_file, rl_config_file)
+
+storedData = "./storedData_example_nolastpenalty_simu3days_price1days_smalltrainset4"
 if not os.path.exists(storedData):
     os.makedirs(storedData)
 
@@ -49,10 +54,17 @@ def callback(lcl, glb):
 def main(learning_rate):
 
     tf.reset_default_graph()    # to avoid the conflict with the existing parameters, but this is not suggested for reuse parameters
-    simudays = 3
-    env = SimpleBatterySimEnv(Lmpfile, 2, simudays)
-    model = deepq.models.mlp([256,256])
 
+    selectdays = [3,7,12,33,43,62,69,80,91,97,98,108,116,123,126,136,144,153,161,174,192,199,225,230,234,247,261,274,281,287,295,305,313,320,327,332,345,348,357,350,360]
+    selectdays2 = selectdays[0:41:4]
+    startday = 3
+    nsimudays = 3
+    npricedays = 1
+    env = SimpleBatterySimEnv(Lmpfile, startday, nsimudays, npricedays, selectdays2)
+    model = deepq.models.mlp([256,256])
+    
+    max_timesteps=1000000
+    
     act = deepq.learn(
         env,
         q_func=model,
@@ -65,8 +77,12 @@ def main(learning_rate):
         print_freq=10,
         callback=callback
     )
-    print("Saving final model to simple_battery_model_lr_%s_100w.pkl" % (str(learning_rate)))
-    act.save(savedModel + "/" + model_name + "_lr_%s_100w.pkl" % (str(learning_rate)))
+    
+    print("Saving final model to %s_lr_%s_%dw.pkl" % (model_name, str(learning_rate), int(max_timesteps/10000)))
+    act.save( savedModel + "/" + model_name + "_lr_%s_%dw.pkl" % (str(learning_rate), int(max_timesteps/10000)) )
+
+#aa._act_params
+
 
 #tf.reset_default_graph()    # to avoid the conflict the existnat parameters, but not suggested for reuse parameters
 step_rewards = list()
@@ -75,16 +91,17 @@ step_observations = list()
 step_status = list()
 step_starttime = list()
 
-check_pt_dir = "./SimpleBatteryModels"
+
+check_pt_dir = "./Checkpoint_" + storedData[13:] + "_lr0001step100w" #"./SimpleBatteryModels"
 if not os.path.exists(check_pt_dir):
     os.makedirs(check_pt_dir)
 
-model_file = os.path.join(check_pt_dir, "simplebatterymodel")
+model_file = os.path.join(check_pt_dir, "lr0001step100w")
 
 
 import time
 start = time.time()
-dataname = storedData[13:]
+dataname = "_step100w"
 for ll in [0.0001]:
     step_rewards = list()
     step_actions = list()
