@@ -27,7 +27,7 @@ Lmpfile = '../../TestData/2017_Zonal_LMP_LONGIL.csv'
 
 #ob_act_dim_ary = ipss_app.initStudyCase(case_files_array , dyn_config_file, rl_config_file)
 
-storedData = "./storedData_example_nolastpenalty_simu3days_price3days_smalltrainset4"
+storedData = "./storedData_nolastpenalty_simu3days_price3days_smalltrainset4"
 if not os.path.exists(storedData):
     os.makedirs(storedData)
 
