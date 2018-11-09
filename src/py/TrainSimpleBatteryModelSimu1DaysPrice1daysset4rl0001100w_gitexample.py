@@ -24,7 +24,7 @@ import baselines.common.tf_util as U
 np.random.seed(19)
 
 # define parameters:
-trainmaxsteps = 10000
+trainmaxsteps = 1000000
 learning_rate = 0.0001
 nsimudays = 1
 npricedays = 1
