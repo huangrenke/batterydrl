@@ -30,12 +30,13 @@ nsimudays = 1
 npricedays = 1
 dataset_interval = 4
 dataset_start = 0
+batteryEtini = 0.0
 
 Lmpfile = '../../TestData/2017_Zonal_LMP_LONGIL.csv'
 
 #ob_act_dim_ary = ipss_app.initStudyCase(case_files_array , dyn_config_file, rl_config_file)
 
-storedData = "./storedData_nolastpenalty_simu%dDays_price%dDays_extendsetdays_smalltrainset%d" %(nsimudays, npricedays, dataset_interval)
+storedData = "./storedData_nolastpenalty_BaEtIni%.1f_simu%dDays_price%dDays_extendsetdays_smalltrainset%d" %(batteryEtini,nsimudays, npricedays, dataset_interval)
 if not os.path.exists(storedData):
     os.makedirs(storedData)
 
@@ -77,7 +78,7 @@ def main(learning_rate, trainmaxsteps, nsimudays, npricedays):
     #npricedays = 1
     print ('---------------selectdaysfortrain: ---------------')
     print (selectdaysfortrain)
-    env = SimpleBatterySimEnv(Lmpfile, startday, nsimudays, npricedays, selectdaysfortrain)
+    env = SimpleBatterySimEnv(Lmpfile, batteryEtini, startday, nsimudays, npricedays, selectdaysfortrain)
     model = deepq.models.mlp([256,256])
     
     act = deepq.learn(

@@ -17,17 +17,26 @@ from baselines import deepq
 from baselines import logger
 import baselines.common.tf_util as U
 
-# this training file train a smaller day sets, each episode with 3 day simulation time, the input for AI includes forecasted 1 day price information
+# this training file train a smaller day sets, each episode with 1 day simulation time, the input for AI includes forecasted 1 day price information
+
+# this training will expand the train day sets by extending the second and third days of the original selected training days
 
 np.random.seed(19)
 
-# create
+# define parameters:
+trainmaxsteps = 1000000
+learning_rate = 0.0001
+nsimudays = 3
+npricedays = 1
+dataset_interval = 4
+dataset_start = 0
+batteryEtini = 0.0
 
 Lmpfile = '../../TestData/2017_Zonal_LMP_LONGIL.csv'
 
 #ob_act_dim_ary = ipss_app.initStudyCase(case_files_array , dyn_config_file, rl_config_file)
 
-storedData = "./storedData_nolastpenalty_simu3days_price1days_smalltrainset4"
+storedData = "./storedData_nolastpenalty_BaEtIni%.1f_simu%dDays_price%dDays_extendsetdays_smalltrainset%d" %(batteryEtini,nsimudays, npricedays, dataset_interval)
 if not os.path.exists(storedData):
     os.makedirs(storedData)
 
@@ -51,25 +60,35 @@ def callback(lcl, glb):
         if lcl['t'] % 499 == 0:
             U.save_state(model_file)
 
-def main(learning_rate):
+def main(learning_rate, trainmaxsteps, nsimudays, npricedays):
 
     tf.reset_default_graph()    # to avoid the conflict with the existing parameters, but this is not suggested for reuse parameters
 
-    selectdays = [3,7,12,33,43,62,69,80,91,97,98,108,116,123,126,136,144,153,161,174,192,199,225,230,234,247,261,274,281,287,295,305,313,320,327,332,345,348,357,350,360]
-    selectdays2 = selectdays[0:41:4]
-    startday = 3
-    nsimudays = 3
-    npricedays = 1
-    env = SimpleBatterySimEnv(Lmpfile, startday, nsimudays, npricedays, selectdays2)
-    model = deepq.models.mlp([256,256])
+    basetraindaysets = [3,7,12,33,43,62,69,80,91,97,98,108,116,123,126,136,144,153,161,174,192,199,225,230,234,247,261,274,281,287,295,305,313,320,327,332,345,348,357,350,360]
+    basedatasetlen = len(basetraindaysets)
+    selectdays = basetraindaysets[dataset_start : basedatasetlen : dataset_interval]
+    selectdaysfortrain = selectdays
     
-    max_timesteps=1000000
+    '''
+    for iday in selectdays:
+        selectdaysfortrain.append(iday)
+        selectdaysfortrain.append(iday+1)
+        selectdaysfortrain.append(iday+2)
+    '''
+        
+    startday = 3
+    #nsimudays = 1
+    #npricedays = 1
+    print ('---------------selectdaysfortrain: ---------------')
+    print (selectdaysfortrain)
+    env = SimpleBatterySimEnv(Lmpfile, batteryEtini, startday, nsimudays, npricedays, selectdaysfortrain)
+    model = deepq.models.mlp([256,256])
     
     act = deepq.learn(
         env,
         q_func=model,
         lr=learning_rate,
-        max_timesteps=1000000,
+        max_timesteps=trainmaxsteps,
         buffer_size=50000,
         checkpoint_freq = 100,
         exploration_fraction=0.1,
@@ -78,8 +97,8 @@ def main(learning_rate):
         callback=callback
     )
     
-    print("Saving final model to %s_lr_%s_%dw.pkl" % (model_name, str(learning_rate), int(max_timesteps/10000)))
-    act.save( savedModel + "/" + model_name + "_lr_%s_%dw.pkl" % (str(learning_rate), int(max_timesteps/10000)) )
+    print("Saving final model to %s_lr_%s_%dw.pkl" % (model_name, str(learning_rate), int(trainmaxsteps/10000)))
+    act.save( savedModel + "/" + model_name + "_lr_%s_%dw.pkl" % (str(learning_rate), int(trainmaxsteps/10000)) )
 
 #aa._act_params
 
@@ -91,25 +110,24 @@ step_observations = list()
 step_status = list()
 step_starttime = list()
 
-
-check_pt_dir = "./Checkpoint_" + storedData[13:] + "_lr0001step100w" #"./SimpleBatteryModels"
+check_pt_dir = "./Checkpoint_" + storedData[13:] + "_lr%s_step%dw" %(str(learning_rate), int(trainmaxsteps/10000)) #"./SimpleBatteryModels"
 if not os.path.exists(check_pt_dir):
     os.makedirs(check_pt_dir)
 
-model_file = os.path.join(check_pt_dir, "lr0001step100w")
+model_file = os.path.join(check_pt_dir, "lr%s_step%dw"%(str(learning_rate), int(trainmaxsteps/10000)))
 
 
 import time
 start = time.time()
-dataname = "_step100w"
-for ll in [0.0001]:
+dataname = "_step%dw" %(int(trainmaxsteps/10000))
+for ll in [learning_rate]:
     step_rewards = list()
     step_actions = list()
     step_observations = list()
     step_status = list()
     step_starttime = list()
 
-    main(ll)
+    main(ll, trainmaxsteps, nsimudays, npricedays)
 
     np.save(os.path.join(storedData, "step_rewards_lr_%s_" % str(ll) + dataname), np.array(step_rewards))
     np.save(os.path.join(storedData, "step_actions_lr_%s_" % str(ll) + dataname), np.array(step_actions))
