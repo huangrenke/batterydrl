@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 #         (2) specify the input training days set
 #         (3) specify forcasting npriceday days of price
 # no penalty for charging/discharging over the limit, but will correct the price and reward
-# no penalty for at the end of simulation the Et does not go back to the original Et 
+# no penalty for at the end of simulation the Et does not go back to the original Et
 
 class SimpleBatterySimEnv(gym.Env):
     metadata = {
@@ -36,8 +36,8 @@ class SimpleBatterySimEnv(gym.Env):
         self.BatteryEt = self.BatteryEtini          # SOC of the battery, MWh
         self.BatteryPt = 0.0            # charge/discharge rate of the battery, + for charge, - for discharge, MW
         self.BatteryCap = 4.0           # Capacity of the battery, MWh
-        self.eta_p = 0.95               # Generation, discharge
-        self.eta_n = 0.7955             # Pumping, charging
+        self.eta_p = 0.9               # Generation, discharge
+        self.eta_n = 0.81              # Pumping, charging
         self.maxPt = 1.0
         self.chargeBoundaryPenalty = 1000
         self.orgSOCbiaspenalty = 0.0
@@ -85,7 +85,7 @@ class SimpleBatterySimEnv(gym.Env):
         #TOOD get the initial states
         #self.state = np.array([self.observation_Et_queue, self.observation_Pt_queue, self.observation_LMP_forecast])
         self.state = np.concatenate((np.array(self.observation_Et_queue), np.array(self.observation_Pt_queue), np.array(self.observation_LMP_pastoneday_queue),  self.observation_LMP_forecast))
-        
+
         self.steps_beyond_done = None
         self.restart_simulation = True
 
@@ -105,7 +105,7 @@ class SimpleBatterySimEnv(gym.Env):
 
         iday = int(self.simuhours / 24)
         ihour = int (self.simuhours % 24)
-        
+
         #print ('self.simustartday is %d, iday is %d, and ihour is %d'%(self.simustartday, iday, ihour))
         self.currentLMP = self.LMP_days[self.simustartday + iday, ihour]
 
@@ -115,32 +115,32 @@ class SimpleBatterySimEnv(gym.Env):
             self.BatteryEt = self.BatteryEt + self.BatteryPt * self.eta_n  # charging eta
         else :
             self.BatteryEt = self.BatteryEt + self.BatteryPt / self.eta_p ## check to make sure this is correct
-        
+
         bchargepenlty = False
-        
+
         reward_reduce = 0.0
         if self.BatteryEt > self.BatteryCap:
             bchargepenlty = True
             reward_reduce = -self.currentLMP * (self.BatteryEt - self.BatteryCap)/self.eta_n
             self.BatteryEt = self.BatteryCap
-            
+
         elif self.BatteryEt < 0.0:
             bchargepenlty = True
             reward_reduce = -self.currentLMP * (self.BatteryEt - 0.0)*self.eta_p
             self.BatteryEt = 0.0
-            
+
         # compute reward:
-        
+
         reward = -self.currentLMP*self.BatteryPt
-        
+
         #print ('time step is %d, reward is %f, reward_reduce is %f, BatteryEt_prev is %f, BatteryPt is %f, BatteryEt_now is %f'%(self.simuhours, reward, reward_reduce, BatteryEt_prev, self.BatteryPt, self.BatteryEt))
-        
+
         if bchargepenlty:  # if the charge/discharge makes the battery exceeds its capacity or less than 0 MWh
             #print ('time step is %d, reward is %f, reward_reduce is %f, BatteryEt_prev is %f, BatteryPt is %f, BatteryEt_now is %f'%(self.simuhours, reward, reward_reduce, BatteryEt_prev, self.BatteryPt, self.BatteryEt))
-            reward -= reward_reduce              
+            reward -= reward_reduce
 
         self.simuhours += 1
-        
+
         #print ('before observation_Et_queue')
         #print(self.observation_Pt_queue)
         #print ('self.BatteryPt value is %f, type is %s'%(self.BatteryPt, type(self.BatteryPt)))
@@ -156,7 +156,7 @@ class SimpleBatterySimEnv(gym.Env):
         #print ('self.state:')
         #print(self.state)
         #teststate = self.state.ravel()
-        
+
         #print ('self.state 2:')
         #print(teststate)
 
@@ -181,7 +181,7 @@ class SimpleBatterySimEnv(gym.Env):
         simustartday_idx = np.random.randint(0,ntraindays) # an integer, in be in the preset days?
         self.simustartday = self.traindayset[simustartday_idx]
         #print('--------- reset:  simustartday is %d -------------'%(self.simustartday))
-        
+
         self.currentLMP = self.LMP_days[self.simustartday, 0]
 
         self.observation_Et_queue.clear()
@@ -197,7 +197,7 @@ class SimpleBatterySimEnv(gym.Env):
 
         #self.state = np.array([self.observation_Et_queue, self.observation_Pt_queue, self.observation_LMP_pastoneday_queue, self.observation_LMP_forecastoneday])
         self.state = np.concatenate((np.array(self.observation_Et_queue), np.array(self.observation_Pt_queue), np.array(self.observation_LMP_pastoneday_queue), self.observation_LMP_forecast))
-        
+
         self.steps_beyond_done = None
         self.restart_simulation = True
 
@@ -208,10 +208,10 @@ class SimpleBatterySimEnv(gym.Env):
 
         self.BatteryEt = self.BatteryEtini  # SOC of the battery, MWh
         self.BatteryPt = 0.0   # charge/discharge rate of the battery, + for charge, - for discharge, MW
-        
+
         self.simuhours = 0
         self.simustartday = istartday
-        
+
         self.currentLMP = self.LMP_days[self.simustartday, 0]
 
         self.observation_Et_queue.clear()
@@ -227,7 +227,7 @@ class SimpleBatterySimEnv(gym.Env):
 
         #self.state = np.array([self.observation_Et_queue, self.observation_Pt_queue, self.observation_LMP_pastoneday_queue, self.observation_LMP_forecastoneday])
         self.state = np.concatenate((np.array(self.observation_Et_queue), np.array(self.observation_Pt_queue), np.array(self.observation_LMP_pastoneday_queue), self.observation_LMP_forecast))
-        
+
         self.steps_beyond_done = None
         self.restart_simulation = True
 
