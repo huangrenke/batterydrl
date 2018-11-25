@@ -28,7 +28,7 @@ class SimpleBatterySimEnv(gym.Env):
     step_time = 1
     action_type = 'discrete'
 
-    def __init__(self, LMP_file, BatteryEt_ini, istartday,nsimudays, npriceday, traindayset):
+    def __init__(self, LMP_file, BatteryEt_ini, etap, etan,  istartday,nsimudays, npriceday, traindayset):
 
         # internal states and variables for the battery model
         #print ('enter the __init__ function of SimpleBatterySimEnv')
@@ -36,8 +36,8 @@ class SimpleBatterySimEnv(gym.Env):
         self.BatteryEt = self.BatteryEtini          # SOC of the battery, MWh
         self.BatteryPt = 0.0            # charge/discharge rate of the battery, + for charge, - for discharge, MW
         self.BatteryCap = 4.0           # Capacity of the battery, MWh
-        self.eta_p = 0.9               # Generation, discharge
-        self.eta_n = 0.81              # Pumping, charging
+        self.eta_p = etap # 0.9               # Generation, discharge
+        self.eta_n = etan # 0.81              # Pumping, charging
         self.maxPt = 1.0
         self.chargeBoundaryPenalty = 1000
         self.orgSOCbiaspenalty = 0.0
