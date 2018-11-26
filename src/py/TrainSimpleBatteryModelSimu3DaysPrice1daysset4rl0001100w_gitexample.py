@@ -31,19 +31,28 @@ npricedays = 1
 dataset_interval = 4
 dataset_start = 0
 batteryEtini = 0.0
+etap = 0.81
+etan = 0.79
 
 Lmpfile = '../../TestData/2017_Zonal_LMP_LONGIL.csv'
 
-#ob_act_dim_ary = ipss_app.initStudyCase(case_files_array , dyn_config_file, rl_config_file)
+tmpfolder= "./storedData"
+if not os.path.exists(tmpfolder):
+    os.makedirs(tmpfolder)
+    
+tmpfolder= "./Checkpoint"
+if not os.path.exists(tmpfolder):
+    os.makedirs(tmpfolder)
 
-storedData = "./storedData_nolastpenalty_BaEtIni%.1f_simu%dDays_price%dDays_extendsetdays_smalltrainset%d" %(batteryEtini,nsimudays, npricedays, dataset_interval)
+storedData = "./storedData/storedData_etap%.2f_etan%.2f_BaEtIni%.1f_simu%dDays_price%dDays_Moredataset%d" %(etap, etan, batteryEtini,nsimudays, npricedays, dataset_interval)
+
 if not os.path.exists(storedData):
     os.makedirs(storedData)
 
 savedModel= "./previous_model"
 if not os.path.exists(savedModel):
     os.makedirs(savedModel)
-model_name = "simplebattery_model_" + storedData[13:]
+model_name = "simplebattery_model_" + storedData[24:]
 
 def callback(lcl, glb):
     # stop training if reward exceeds -30
@@ -67,6 +76,18 @@ def main(learning_rate, trainmaxsteps, nsimudays, npricedays):
     basetraindaysets = [3,7,12,33,43,62,69,80,91,97,98,108,116,123,126,136,144,153,161,174,192,199,225,230,234,247,261,274,281,287,295,305,313,320,327,332,345,348,357,350,360]
     basedatasetlen = len(basetraindaysets)
     selectdays = basetraindaysets[dataset_start : basedatasetlen : dataset_interval]
+    selectdays.append(344)
+    selectdays.append(360)
+    selectdays.append(313)  # data set 1
+    selectdays.append(7)
+    selectdays.append(63)
+    selectdays.append(348)  #data set 2
+    selectdays.append(70)
+    selectdays.append(359)    #data set 3
+    selectdays.append(33)
+    selectdays.append(80)
+    selectdays.append(350)    #data set 4
+
     selectdaysfortrain = selectdays
     
     '''
@@ -81,7 +102,7 @@ def main(learning_rate, trainmaxsteps, nsimudays, npricedays):
     #npricedays = 1
     print ('---------------selectdaysfortrain: ---------------')
     print (selectdaysfortrain)
-    env = SimpleBatterySimEnv(Lmpfile, batteryEtini, startday, nsimudays, npricedays, selectdaysfortrain)
+    env = SimpleBatterySimEnv(Lmpfile, batteryEtini, etap, etan, startday, nsimudays, npricedays, selectdaysfortrain)
     model = deepq.models.mlp([256,256])
     
     act = deepq.learn(
@@ -110,7 +131,7 @@ step_observations = list()
 step_status = list()
 step_starttime = list()
 
-check_pt_dir = "./Checkpoint_" + storedData[13:] + "_lr%s_step%dw" %(str(learning_rate), int(trainmaxsteps/10000)) #"./SimpleBatteryModels"
+check_pt_dir = "./Checkpoint/Checkpoint_" + storedData[24:] + "_lr%s_step%dw" %(str(learning_rate), int(trainmaxsteps/10000)) #"./SimpleBatteryModels"
 if not os.path.exists(check_pt_dir):
     os.makedirs(check_pt_dir)
 

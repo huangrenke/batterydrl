@@ -38,14 +38,22 @@ Lmpfile = '../../TestData/2017_Zonal_LMP_LONGIL.csv'
 
 #ob_act_dim_ary = ipss_app.initStudyCase(case_files_array , dyn_config_file, rl_config_file)
 
-storedData = "./storedData_etap%.2f_etan%.2f_BaEtIni%.1f_simu%dDays_price%dDays_extendsetdays_Moredataset%d" %(etap, etan, batteryEtini,nsimudays, npricedays, dataset_interval)
+tmpfolder= "./storedData"
+if not os.path.exists(tmpfolder):
+    os.makedirs(tmpfolder)
+    
+tmpfolder= "./Checkpoint"
+if not os.path.exists(tmpfolder):
+    os.makedirs(tmpfolder)
+
+storedData = "./storedData/storedData_etap%.2f_etan%.2f_BaEtIni%.1f_simu%dDays_price%dDays_extendsetdays_Moredataset%d" %(etap, etan, batteryEtini,nsimudays, npricedays, dataset_interval)
 if not os.path.exists(storedData):
     os.makedirs(storedData)
 
 savedModel= "./previous_model"
 if not os.path.exists(savedModel):
     os.makedirs(savedModel)
-model_name = "simplebattery_model_" + storedData[13:]
+model_name = "simplebattery_model_" + storedData[24:]
 
 def callback(lcl, glb):
     # stop training if reward exceeds -30
@@ -121,7 +129,7 @@ step_observations = list()
 step_status = list()
 step_starttime = list()
 
-check_pt_dir = "./Checkpoint_" + storedData[13:] + "_lr%s_step%dw" %(str(learning_rate), int(trainmaxsteps/10000)) #"./SimpleBatteryModels"
+check_pt_dir = "./Checkpoint/Checkpoint_" + storedData[24:] + "_lr%s_step%dw" %(str(learning_rate), int(trainmaxsteps/10000)) #"./SimpleBatteryModels"
 if not os.path.exists(check_pt_dir):
     os.makedirs(check_pt_dir)
 
