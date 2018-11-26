@@ -160,7 +160,7 @@ class SimpleBatterySimEnv(gym.Env):
         #print ('self.state 2:')
         #print(teststate)
 
-        if self.simuhours == self.simudays*24 - 1:
+        if self.simuhours == self.simudays*24:
             done = True
             reward -= self.orgSOCbiaspenalty * abs(self.BatteryEt - 0.5*self.BatteryCap)
         else:
