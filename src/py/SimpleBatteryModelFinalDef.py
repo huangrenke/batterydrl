@@ -69,7 +69,7 @@ class SimpleBatterySimEnv(gym.Env):
         self.observation_Et_queue = collections.deque(maxlen=self.observation_Et_length)
         self.observation_Pt_queue = collections.deque(maxlen=self.observation_Pt_length)
         self.observation_LMP_pastoneday_queue = collections.deque(maxlen=self.observation_LMP_past_length)
-        self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24 : (self.simustartday+self.npriceday)*24]
+        self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24 : int((self.simustartday+self.npriceday)*24)]
 
         for i in range (0, self.observation_Et_length):
             self.observation_Et_queue.append(self.BatteryEt)
@@ -78,7 +78,7 @@ class SimpleBatterySimEnv(gym.Env):
 
         #define action and observation spaces
         self.action_space      = spaces.Discrete(action_space_dim)
-        self.observation_space = spaces.Box(-999,999,shape=(self.observation_Et_length + self.observation_Pt_length + (self.npriceday+1)*24,))
+        self.observation_space = spaces.Box(-999,999,shape=(self.observation_Et_length + self.observation_Pt_length + int((self.npriceday+1)*24),))
 
         self._seed()
 
@@ -147,7 +147,7 @@ class SimpleBatterySimEnv(gym.Env):
         self.observation_Et_queue.append(self.BatteryEt)
         self.observation_Pt_queue.append(self.BatteryPt)
         self.observation_LMP_pastoneday_queue.append(self.currentLMP)
-        self.observation_LMP_forecast = self.LMP_1dim[(self.simustartday+iday)*24+ihour : (self.simustartday+iday)*24+ihour+24*self.npriceday]
+        self.observation_LMP_forecast = self.LMP_1dim[(self.simustartday+iday)*24+ihour : (self.simustartday+iday)*24+ihour+int(24*self.npriceday)]
         #print ('after observation_Et_queue')
         #print(self.observation_Pt_queue)
 
@@ -188,7 +188,7 @@ class SimpleBatterySimEnv(gym.Env):
         self.observation_Pt_queue.clear()
         self.observation_LMP_pastoneday_queue.clear()
         #self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24+self.simuhours : self.simustartday*24+self.simuhours+24]
-        self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24 : (self.simustartday+self.npriceday)*24]
+        self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24 : int((self.simustartday+self.npriceday)*24)]
 
         for i in range (0, self.observation_Et_length):
             self.observation_Et_queue.append(self.BatteryEt)
@@ -218,7 +218,7 @@ class SimpleBatterySimEnv(gym.Env):
         self.observation_Pt_queue.clear()
         self.observation_LMP_pastoneday_queue.clear()
         #self.observation_LMP_forecastoneday = self.LMP_days[self.simustartday, :]
-        self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24 : (self.simustartday+self.npriceday)*24]
+        self.observation_LMP_forecast = self.LMP_1dim[self.simustartday*24 : int((self.simustartday+self.npriceday)*24)]
 
         for i in range (0, self.observation_Et_length):
             self.observation_Et_queue.append(self.BatteryEt)
